@@ -84,9 +84,9 @@ BKEYCHAR:
 ;       Init board GPIO (except COM ports)
 
 BOARDINIT:
-        ; Board I/O initialization: enable USART TX->PA2, RX->PA3
-        MOV     CLK_PCKENR1,#0x21
-        BSET    PA_DDR,#2
-        BSET    PA_CR1,#2
-        MOV     SYSCFG_RMPCR1,#0x1C
+        ; Board I/O initialization
+        MOV     CLK_PCKENR1,#0x21     ; Enable UART clock
+        BSET    PC_DDR,#5             ; USART1_TX on PC5 and USART1_RX on PC6
+        BSET    PC_CR1,#5
+        MOV     SYSCFG_RMPCR1,#0x2C 
         RET
