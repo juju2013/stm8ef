@@ -251,7 +251,7 @@
         UNLINK_AGAIN     = 0    ; "AGAIN"
         UNLINK_IFF       = 0    ; "IF"
         UNLINK_THENN     = 0    ; "THEN"
-        UNLINK_ELSE      = 0    ; "ELSE"
+        UNLINK_ELSEE     = 0    ; "ELSE"
         UNLINK_AHEAD     = 1    ; "AHEAD"
         UNLINK_WHILE     = 0    ; "WHILE"
         UNLINK_REPEA     = 0    ; "REPEAT"
