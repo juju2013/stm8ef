@@ -3558,8 +3558,8 @@ THENN:
 ;       ELSE    ( A -- A )
 ;       Start the false clause in an IF-ELSE-THEN structure.
 
-        HEADFLG ELSE "ELSE" IMEDD
-ELSE:
+        HEADFLG ELSEE "ELSE" IMEDD
+ELSEE:
         CALLR   AHEAD
         CALLR   SWAPLOC
         JRA     THENN
