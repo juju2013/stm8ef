@@ -627,9 +627,7 @@ COLD:
 ;       ?RX     ( -- c T | F )  ( TOS STM8: -- Y,Z,N )
 ;       Return serial interface input char from and true, or false.
 
-        .ifeq   BAREBONES
         HEADER  QRX "?RX"
-        .endif
 QRX:
         CLR     A               ; A: flag false
         BTJF    UART_SR,#5,1$
@@ -641,9 +639,7 @@ QRX:
 ;       TX!     ( c -- )
 ;       Send character c to the serial interface.
 
-        .ifeq   BAREBONES
         HEADER  TXSTOR "TX!"
-        .endif
 TXSTOR:
         INCW    X
         LD      A,(X)
@@ -730,9 +726,7 @@ DOLITC:
 ;       doLit   ( -- w )
 ;       Push an inline literal.
 
-        .ifne   WORDS_LINKRUNTI
         HEADFLG DOLIT "doLit" COMPO
-        .endif
 DOLIT:
         DECW    X               ;SUBW   X,#2
         DECW    X
@@ -743,14 +737,11 @@ DOLIT:
         JRA     POPYJPY
         .endif
 
-        .ifeq   BOOTSTRAP
         .ifne   HAS_DOLOOP
 ;       (+loop) ( +n -- )
 ;       Add n to index R@ and test for lower than limit (R-CELL)@.
 
-        .ifne   WORDS_LINKRUNTI
         HEADFLG DOPLOOP "(+loop)" COMPO
-        .endif
 DOPLOOP:
         LDW     Y,(5,SP)
         LDW     YTEMP,Y
@@ -781,14 +772,11 @@ LEAVE:
         POPW    Y               ; DO leaves the address of +loop on the R-stack
         JP      (2,Y)
         .endif
-        .endif
 
 ;       donext    ( -- )
 ;       Code for single index loop.
 
-        .ifne   WORDS_LINKRUNTI
         HEADFLG DONXT "donxt" COMPO
-        .endif
 DONXT:
         LDW     Y,(3,SP)
         DECW    Y
@@ -809,9 +797,7 @@ QDQBRAN:
 ;       ?branch ( f -- )
 ;       Branch if flag is zero.
 
-        .ifne   WORDS_LINKRUNTI
         HEADFLG QBRAN "?branch" COMPO
-        .endif
 QBRAN:
         CALL    YFLAGS          ; Pull TOS to Y, flags
         JREQ    BRAN
@@ -823,9 +809,7 @@ POPYJPY:
 ;       branch  ( -- )
 ;       Branch to an inline address.
 
-        .ifne   WORDS_LINKRUNTI
         HEADFLG BRAN "branch" COMPO    ; NOALIAS
-        .endif
 BRAN:
         POPW    Y
         LDW     Y,(Y)
@@ -1009,9 +993,7 @@ DOVARPTR:
 ;       doVAR   ( -- a )     ( TOS STM8: -- Y,Z,N )
 ;       Code for VARIABLE and CREATE.
 
-        .ifne   WORDS_LINKRUNTI
         HEADFLG DOVAR "doVar" COMPO
-        .endif
 DOVAR:
         POPW    Y               ; get return addr (pfa)
         ; fall through
@@ -1019,7 +1001,7 @@ DOVAR:
 ;       Y>  ( -- n )     ( TOS STM8: - Y,Z,N )
 ;       push Y to stack
 
-;       HEADER  YSTOR "Y>"
+;       GENALIAS  YSTOR "Y>"
 YSTOR:
         DECW    X               ; SUBW  X,#2
         DECW    X
@@ -1208,7 +1190,10 @@ ZL1:    LD      (X),A
         HEADER  SUBB "-"
 
 SUBB:
-        .ifne   SPEEDOVERSIZE
+        .ifeq   SPEEDOVERSIZE
+        CALL    NEGAT           ; (15 cy)
+        JRA     PLUS            ; 25 cy (15+10)
+        .else
         LDW     Y,X
         LDW     Y,(Y)
         LDW     YTEMP,Y
@@ -1219,9 +1204,6 @@ SUBB:
         SUBW    Y,YTEMP
         LDW     (X),Y
         RET                     ; 18 cy
-        .else
-        CALL    NEGAT           ; (15 cy)
-        JRA     PLUS            ; 25 cy (15+10)
         .endif
 
 
@@ -1247,9 +1229,7 @@ CNTXT:
 ;       CP      ( -- a )     ( TOS STM8: -- Y,Z,N )
 ;       Point to top of dictionary.
 
-        .ifne   WORDS_LINKCOMP
         HEADER  CPP "cp"               ; NOALIAS
-        .endif
 CPP:
         LD      A,#(USRCP)
         JRA     ASTOR
@@ -1325,16 +1305,14 @@ TQKEY:
 ;       LAST    ( -- a )        ( TOS STM8: -- Y,Z,N )
 ;       Point to last name in dictionary
 
-        .ifeq   BAREBONES
         HEADER  LAST "last"
-        .endif
 LAST:
         LD      A,#(USRLAST)
 
 ;       A>  ( -- n )     ( TOS STM8: - Y,Z,N )
 ;       push A to stack
 
-;       HEADER  ASTOR "A>"
+;       GENALIAS  ASTOR "A>"
 ASTOR:
         CLRW    Y
         LD      YL,A
@@ -1388,9 +1366,7 @@ BLANK:
 ;       0       ( -- 0)     ( TOS STM8: -- Y,Z,N )
 ;       Return 0.
 
-        .ifne   SPEEDOVERSIZE
         HEADER  ZERO "0"
-        .endif
 ZERO:
         CLR     A
         JRA     ASTOR
@@ -1398,9 +1374,7 @@ ZERO:
 ;       1       ( -- 1)     ( TOS STM8: -- Y,Z,N )
 ;       Return 1.
 
-        .ifne   SPEEDOVERSIZE
         HEADER  ONE "1"
-        .endif
 ONE:
         LD      A,#1
         JRA     ASTOR
@@ -1408,9 +1382,7 @@ ONE:
 ;       -1      ( -- -1)     ( TOS STM8: -- Y,Z,N )
 ;       Return -1
 
-        .ifne   SPEEDOVERSIZE
         HEADER  MONE "-1"
-        .endif
 MONE:
         LDW     Y,#0xFFFF
         JRA     AYSTOR
@@ -1490,7 +1462,12 @@ QDUP1:  RET
 
         HEADER  ROT "ROT"
 ROT:
-        .ifne   SPEEDOVERSIZE
+        .ifeq   SPEEDOVERSIZE
+        CALL    TOR
+        CALLR   1$
+        CALL    RFROM
+1$:     JP      SWAPP
+        .else
         LDW     Y,X
         LDW     X,(4,X)
         PUSHW   X
@@ -1506,13 +1483,6 @@ ROT:
         POPW    Y
         LDW     (X),Y
         RET
-        .else
-        CALL    TOR
-        CALLR   1$
-        CALL    RFROM
-1$:     JP      SWAPP
-
-
         .endif
 
 ;       2DUP    ( w1 w2 -- w1 w2 w1 w2 )
@@ -1545,15 +1515,18 @@ DN1:    LDW     (X),Y
         RET
         .endif
 
-        .ifeq   BOOTSTRAP
+        ; .ifeq   BOOTSTRAP
 ;       =       ( w w -- t )    ( TOS STM8: -- Y,Z,N )
 ;       Return true if top two are equal.
 
         HEADER  EQUAL "="
 EQUAL:
-        .ifne   SPEEDOVERSIZE
-        LD      A,#0x0FF        ;true
-        LDW     Y,X     ;D = n2
+        .ifeq   SPEEDOVERSIZE
+        CALL    XORR
+        JP      ZEQUAL                 ; 31 cy= (18+13)
+        .else
+        LD      A,#0x0FF         ; true
+        LDW     Y,X              ; D = n2
         LDW     Y,(Y)
         LDW     YTEMP,Y
         INCW    X
@@ -1568,11 +1541,8 @@ EQ1:    LD      (X),A
         LDW     Y,X
         LDW     Y,(Y)
         RET                            ; 24 cy
-        .else
-        CALL    XORR
-        JP      ZEQUAL                 ; 31 cy= (18+13)
-        .endif
-        .endif
+       .endif
+        ; .endif
 
 
 ;       U<      ( u u -- t )    ( TOS STM8: -- Y,Z,N )
@@ -1595,7 +1565,10 @@ ULESS:
 
         HEADER  LESS "<"
 LESS:
-        .ifne   SPEEDOVERSIZE
+        .ifeq   SPEEDOVERSIZE
+        CALL    SUBB             ; (29cy)
+        JP      ZLESS            ; 41 cy (12+29)
+        .else
         CLR     A
         LDW     Y,X
         LDW     Y,(Y)
@@ -1612,9 +1585,6 @@ LESS:
         LDW     Y,X
         LDW     Y,(Y)
         RET                      ; 26 cy
-        .else
-        CALL    SUBB             ; (29cy)
-        JP      ZLESS            ; 41 cy (12+29)
         .endif
         .endif
 
@@ -1949,7 +1919,7 @@ ONEP:
 ;       Caution: no other Forth word can be called from assembly!
 ;       In the assembly code: X=(TOS), YTEMP=TOS. (TOS)=X after RET
 
-;       HEADER  DOXCODE "DOXCODE"
+;       GENALIAS  DOXCODE "DOXCODE"
 DOXCODE:
         POPW    Y
         LDW     YTEMP,X
@@ -1991,9 +1961,7 @@ ABSS:
 ;       0=      ( n -- t )      ( TOS STM8: -- Y,Z,N ))
 ;       Return true if n is equal to 0
 
-        .ifne   WORDS_EXTRACORE
         HEADER  ZEQUAL "0="
-        .endif
 ZEQUAL:
         CALLR   DOXCODE
         JREQ    1$
@@ -2018,9 +1986,7 @@ PICK:
 ;       >CHAR   ( c -- c )      ( TOS STM8: -- A,Z,N )
 ;       Filter non-printing characters.
 
-        .ifne   WORDS_LINKMISC
         HEADER  TCHAR ">CHAR"
-        .endif
 TCHAR:
         LD      A,(1,X)
         CP      A,#0x7F
@@ -2035,9 +2001,7 @@ TCHAR:
 ;       DEPTH   ( -- n )      ( TOS STM8: -- Y,Z,N )
 ;       Return  depth of data stack.
 
-        .ifeq   BAREBONES
         HEADER  DEPTH "DEPTH"
-        .endif
 DEPTH:
         LDW     Y,X
         NEGW    X
@@ -2071,9 +2035,7 @@ PSTOR:
 ;       Return count byte of a string
 ;       and add 1 to byte address.
 
-        .ifeq   BAREBONES
         HEADER  COUNT "COUNT"
-        .endif
 COUNT:
         CALL    DUPP
         CALL    ONEP
@@ -2102,9 +2064,7 @@ HERE:
 ;       Return address of text buffer
 ;       above code dictionary.
 
-        .ifne   WORDS_LINKCHAR
         HEADER  PAD "PAD"
-        .endif
 PAD:
         .ifne   HAS_BACKGROUND
         ; get PAD area address (offset or dedicated) for PAD area
@@ -2199,9 +2159,7 @@ PACKS:
 ;       DIGIT   ( u -- c )      ( TOS STM8: -- Y,Z,N )
 ;       Convert digit u to a character.
 
-        .ifne   WORDS_LINKCHAR
         HEADER  DIGIT "DIGIT"
-        .endif
 DIGIT:
         LD      A,(1,X)
         CP      A,#10
@@ -2225,9 +2183,7 @@ EXTRC:
 ;       #>      ( w -- b u )
 ;       Prepare output string.
 
-        .ifne   WORDS_LINKCHAR
         HEADER  EDIGS "#>"
-        .endif
 EDIGS:
         LDW     Y,USRHLD        ; DROP HLD
         LDW     (X),Y
@@ -2239,9 +2195,7 @@ EDIGS:
 ;       Extract one digit from u and
 ;       append digit to output string.
 
-        .ifne   WORDS_LINKCHAR
         HEADER  DIG "#"
-        .endif
 DIG:
         CALLR   BASEAT
         CALLR   EXTRC
@@ -2251,9 +2205,7 @@ DIG:
 ;       Convert u until all digits
 ;       are added to output string.
 
-        .ifne   WORDS_LINKCHAR
         HEADER  DIGS "#S"
-        .endif
 DIGS:
 DIGS1:  CALLR   DIG
         JRNE    DIGS1
@@ -2262,9 +2214,7 @@ DIGS1:  CALLR   DIG
 ;       HOLD    ( c -- )    ( TOS STM8: -- Y,Z,N )
 ;       Insert a character into output string.
 
-        .ifne   WORDS_LINKCHAR
         HEADER  HOLD "HOLD"
-        .endif
 HOLD:
         LD      A,(1,X)         ; A < c
         EXGW    X,Y
@@ -2280,9 +2230,7 @@ H_DROP:
 ;       Add a minus sign to
 ;       numeric output string.
 
-        .ifne   WORDS_LINKCHAR
         HEADER  SIGN "SIGN"
-        .endif
 SIGN:
         TNZ     (X)
         JRPL    H_DROP
@@ -2293,9 +2241,7 @@ SIGN:
 ;       <#      ( -- )   ( TOS STM8: -- Y,Z,N )
 ;       Initiate numeric output process.
 
-        .ifne   WORDS_LINKCHAR
         HEADER  BDIGS "<#"
-        .endif
 BDIGS:
         CALL    PAD
         DoLitC  USRHLD
@@ -2367,7 +2313,7 @@ NUMQ0:
         CALLR   HEX
         JRA     NUMQSKIP
 1$:
-        .ifeq   BAREBONES
+        .ifne   EXTNUMPREFIX
         CP      A,#('%')
         JRNE    2$
         MOV     USRBASE+1,#2
@@ -2543,9 +2489,7 @@ CHAR2:  CALL    DONXT
 ;       Return  address of a compiled
 ;       string.
 
-        .ifne   WORDS_LINKRUNTI
         HEADFLG DOSTR "do$" COMPO
-        .endif
 DOSTR:
         CALL    RFROM
         CALL    RAT
@@ -2571,9 +2515,7 @@ STRQP:
 ;       Run time routine of ." .
 ;       Output a compiled string.
 
-        .ifne   WORDS_LINKRUNTI
         HEADFLG DOTQP '."|' COMPO
-        .endif
 DOTQP:
         CALLR   DOSTR
 COUNTTYPES:
@@ -2596,9 +2538,7 @@ DOTR:
 ;       Display an unsigned integer
 ;       in n column, right justified.
 
-        .ifeq   BAREBONES
         HEADER  UDOTR "U.R"
-        .endif
 UDOTR:
         CALL    TOR
         CALLR   BDEDIGS
@@ -2674,7 +2614,7 @@ QUEST:
 ;       >Y  ( n -- )       ( TOS STM8: - Y,Z,N )
 ;       Consume TOS to CPU Y and Flags
 
-;       HEADER  YFLAGS ">Y"
+;       GENALIAS  YFLAGS ">Y"
 YFLAGS:
         LDW     Y,X
         INCW    X
@@ -2686,7 +2626,7 @@ YFLAGS:
 ;       >A   ( c -- )       ( TOS STM8: - A,Z,N )
 ;       Consume TOS to CPU A and Flags
 
-;       HEADER  AFLAGS ">A"
+;       GENALIAS  AFLAGS ">A"
 AFLAGS:
         INCW    X
         LD      A,(X)
@@ -2780,7 +2720,7 @@ PARSE:
         DoLitC  USR_IN
         JP      PSTOR
 
-        .ifeq   BOOTSTRAP
+        .ifeq   BAREBONES
 ;       .(      ( -- )
 ;       Output following string up to next ) .
 
@@ -2850,9 +2790,7 @@ TOKSNAME:
 ;       Return a code address given
 ;       a name address.
 
-        .ifeq   BAREBONES
         HEADER  NAMET "NAME>"
-        .endif
 NAMET:
         CALL    COUNT
         DoLitC  31
@@ -3175,7 +3113,7 @@ CR:
 
 ;       COMPILE?   ( -- n )
 ;       0 if 'EVAL points to $INTERPRETER
-;       HEADER  COMPIQ "COMPILE?"
+;       GENALIAS  COMPIQ "COMPILE?"
 COMPIQ:
         LDW     Y,USREVAL
         SUBW    Y,#INTER
@@ -3282,9 +3220,7 @@ TICK:
 ;       Compile next immediate
 ;       word into code dictionary.
 
-        .ifeq   BAREBONES
         HEADFLG BCOMP "[COMPILE]" IMEDD
-        .endif
 BCOMP:
         CALLR   TICK
         JRA     JSRC
@@ -3294,12 +3230,7 @@ BCOMP:
 ;       Compile an integer into
 ;       code dictionary.
 
-;       HEADER  COMMA ","
-        .dw     LINK
-
-        LINK =  .
-        .db     1
-        .ascii  ","
+        HEADER  COMMA ^/","/
 COMMA:
         DoLitC  2
         CALLR   OMMA
@@ -3307,12 +3238,8 @@ COMMA:
 
 ;       C,      ( c -- )
 ;       Compile a byte into code dictionary.
-;       HEADER  CCOMMA "C,"
-        .dw     LINK
 
-        LINK =  .
-        .db     2
-        .ascii  "C,"
+        HEADER  CCOMMA ^/"C,"/
 CCOMMA:
         CALL    ONE
         CALLR   OMMA
@@ -3327,16 +3254,8 @@ OMMA:
 
 ;       CALL,   ( ca -- )
 ;       Compile a subroutine call.
-        .ifeq   BAREBONES
-        .ifeq   UNLINK_JSRC
-;       HEADER  JSRC "CALL,"
-        .dw     LINK
 
-        LINK =  .
-        .db     5
-        .ascii  "CALL,"
-        .endif
-        .endif
+        HEADER  JSRC ^/"CALL,"/
 JSRC:
         CALL    DUPP
         CALL    HERE
@@ -3387,9 +3306,7 @@ LITER:
 ;       Compile next jsr in
 ;       colon list to code dictionary.
 
-        .ifeq   BAREBONES
         HEADFLG COMPI "COMPILE" COMPO
-        .endif
 COMPI:
         EXGW    X,Y
         POPW    X
@@ -3422,14 +3339,8 @@ COMPIO2:
 ;       $,"     ( -- )
 ;       Compile a literal string
 ;       up to next " .
-        .ifeq   UNLINK_STRCQ
-;       HEADER  STRCQ '$,"'
-         .dw     LINK
 
-        LINK =  .
-        .db     3
-        .ascii  '$,"'
-        .endif
+        HEADER  STRCQ ^/'$,"'/
 STRCQ:
         DoLitC  34              ; "
         CALL    PARSE
@@ -3465,7 +3376,6 @@ NEXT:
         .endif
 
         .ifne   HAS_DOLOOP
-        .ifeq   BOOTSTRAP
 ;       DO      ( n1 n2 -- )
 ;       Start a DO LOOP loop from n1 to n2
 ;       structure in a colon definition.
@@ -3505,7 +3415,6 @@ PLOOP:
         CALL    SUBB
         CALL    STORE           ; patch DO runtime code for LEAVE
         JP      COMMA
-        .endif
         .endif
 
         .ifeq   BOOTSTRAP
@@ -3558,8 +3467,8 @@ THENN:
 ;       ELSE    ( A -- A )
 ;       Start the false clause in an IF-ELSE-THEN structure.
 
-        HEADFLG ELSEE "ELSE" IMEDD
-ELSEE:
+        HEADFLG ELSE "ELSE" IMEDD
+ELSE:
         CALLR   AHEAD
         CALLR   SWAPLOC
         JRA     THENN
@@ -3567,9 +3476,7 @@ ELSEE:
 ;       AHEAD   ( -- A )
 ;       Compile a forward branch instruction.
 
-        .ifeq   BAREBONES
         HEADFLG AHEAD "AHEAD" IMEDD
-        .endif
 AHEAD:
         CALL    CCOMMALIT
         .db     BRAN_OPC
@@ -3613,9 +3520,7 @@ AFT:
 ;       ABORT"  ( -- ; <string> )
 ;       Conditional abort with an error message.
 
-        .ifeq   BAREBONES
         HEADFLG ABRTQ 'ABORT"' IMEDD
-        .endif
 ABRTQ:
         CALL    COMPI
         CALL    ABORQ
@@ -3651,9 +3556,7 @@ DOTQ:
 ;       Display a warning message
 ;       if word already exists.
 
-        .ifne   WORDS_LINKCOMP
         HEADER  UNIQU "?UNIQUE"
-        .endif
 UNIQU:
         CALL    DUPP
         CALL    NAMEQ           ; ?name exists
@@ -3671,16 +3574,7 @@ UNIQ1:  JP      DROP
 ;       Build a new dictionary name
 ;       using string at na.
 
-        .ifne   WORDS_LINKCOMP
-        .ifeq   UNLINK_SNAME
-;       HEADER  SNAME "$,n"
-        .dw     LINK
-
-        LINK =  .
-        .db     3
-        .ascii  "$,n"
-        .endif
-        .endif
+        HEADER  SNAME ^/"$,n"/
 SNAME:
         CALL    DUPPCAT         ; ?null input
         CALL    QBRAN
@@ -3729,9 +3623,7 @@ SCOM2:  CALL    NUMBQ           ; try to convert to number
 ;       OVERT   ( -- )
 ;       Link a new word into vocabulary.
 
-        .ifne   WORDS_LINKCOMP + HAS_ALIAS
         HEADER  OVERT "OVERT"
-        .endif
 OVERT:
         .ifne   HAS_CPNVM
         LDW     Y,USRLAST
@@ -3752,13 +3644,7 @@ OVERT:
 ;       ;       ( -- )
 ;       Terminate a colon definition.
 
-;       HEADFLG SEMIS ";" (IMEDD+COMPO)
-        .dw     LINK
-
-        LINK =  .
-        .db     (IMEDD+COMPO+1)
-        .ascii  ";"
-
+        HEADFLG SEMIS ^/";"/ (IMEDD+COMPO)
 SEMIS:
         CALL    CCOMMALIT
         .db     EXIT_OPC
@@ -3786,7 +3672,6 @@ RBRAC:
 ; Defining words
 
         .ifne   HAS_DOES
-
 ;       DOES>   ( -- )
 ;       Define action of defining words
 
@@ -3811,9 +3696,7 @@ DOESS:
 ;       dodoes  ( -- )
 ;       link action to words created by defining words
 
-        .ifne   WORDS_LINKRUNTI
         HEADER  DODOES "dodoes" ; NOALIAS
-        .endif
 DODOES:
         LD      A,#(USRLAST)    ; ( link field of current word )
         CALLR   AAT
@@ -3842,7 +3725,7 @@ DODOES:
 
 ;       A@   ( A:shortAddr -- n )
 ;       push contents of A:shortAddr on stack
-;       HEADER  AAT "A@"
+;       GENALIAS  AAT "A@"
 AAT:
         CLRW    Y
         LD      YL,A
@@ -3850,7 +3733,7 @@ AAT:
 
 ;       Y@   ( Y:Addr -- n )
 ;       push contents of Y:Addr on stack
-;       HEADER  YAT "Y@"
+;       GENALIAS  YAT "Y@"
 YAT:
         LDW     Y,(Y)
         JP      YSTOR
@@ -3958,9 +3841,7 @@ DUPPCAT:
 ;       Display a string. Filter
 ;       non-printing characters.
 
-        .ifne   WORDS_LINKMISC
         HEADER  UTYPE "_TYPE"
-        .endif
 UTYPE:
         CALL    TOR             ; start count down loop
         JRA     UTYP2           ; skip first pass
@@ -3978,9 +3859,7 @@ UTYP2:  CALL    DONXT
 ;       Dump u bytes from ,
 ;       leaving a+u on  stack.
 
-        .ifne   WORDS_LINKMISC
         HEADER  DUMPP "dm+"
-        .endif
 DUMPP:
         CALL    OVER
         DoLitC  4
@@ -4051,9 +3930,7 @@ DOTS2:  CALL    DONXT
 ;       .ID     ( na -- )
 ;       Display name at address.
 
-        .ifne   WORDS_LINKMISC
         HEADER  DOTID ".ID"
-        .endif
 DOTID:
         CALL    QDQBRAN         ; if zero no name
         .dw     DOTI1
@@ -4174,33 +4051,24 @@ LOCK:
         RET
         .endif
 
-
-        .ifne   (HAS_CPNVM + WORDS_EXTRAEEPR)
+        .ifne   HAS_CPNVM
 ;       ULOCKF  ( -- )
 ;       Unlock Flash (STM8S)
 
-        .ifne   WORDS_EXTRAEEPR
         HEADER  UNLOCK_FLASH "ULOCKF"
-        .endif
 UNLOCK_FLASH:
         MOV     FLASH_PUKR,#0x56
         MOV     FLASH_PUKR,#0xAE
 1$:     BTJF    FLASH_IAPSR,#1,1$    ; PM0051 4.1 requires polling bit1=1 before writing
         RET
 
-
 ;       LOCKF  ( -- )
 ;       Lock Flash (STM8S)
 
-        .ifne   WORDS_EXTRAEEPR
         HEADER  LOCK_FLASH "LOCKF"
-        .endif
 LOCK_FLASH:
         BRES    FLASH_IAPSR,#1
         RET
-        .endif
-
-        .ifne  HAS_CPNVM
 
 ;       Helper routine: swap USRCP and NVMCP
 SWAPCP:
@@ -4227,7 +4095,6 @@ NVMM:
 1$:
         RET
 
-
 ;       RAM  ( -- )
 ;       Compile to RAM (enter mode RAM)
 
@@ -4250,7 +4117,6 @@ RAMM:
 1$:
         RET
 
-
 ;       RESET  ( -- )
 ;       Reset Flash dictionary and 'BOOT to defaults and restart
 
@@ -4264,7 +4130,6 @@ RESETT:
         CALLR   LOCK_FLASH
         JP      COLD
 
-
 ;       SAVEC ( -- )
 ;       Minimal context switch for low level interrupt code
 ;       This should be the first word called in the interrupt handler
@@ -4276,7 +4141,6 @@ SAVEC:
         PUSHW   X
         LDW     X,#(ISPP)       ; init data stack for interrupt ISPP
         JP      (Y)
-
 
 ;       IRET ( -- )
 ;       Restore context and return from low level interrupt code
@@ -4296,7 +4160,9 @@ RESTC:
 
         HEADER  WIPE "WIPE"
 WIPE:
-        .ifne  HAS_CPNVM
+        .ifeq  HAS_CPNVM
+        JP      OVERT           ; initialize CONTEXT from USRLAST
+        .else
         CALLR   RAMM
         PUSHW   X
         LDW     X,COLDCTOP      ; reserve some space for user variable
@@ -4313,8 +4179,8 @@ WIPE:
         INCW    X
         LDW     USRCP,X         ; done
         POPW    X
-        .endif
         JP      OVERT           ; initialize CONTEXT from USRLAST
+        .endif
 
 ;===============================================================
 

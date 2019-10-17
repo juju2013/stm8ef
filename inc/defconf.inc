@@ -3,7 +3,7 @@
 ;       Default settings for all kinds of options
 ;--------------------------------------------------------
         RELVER1          = 2    ; Revision digit 1
-        RELVER0          = 3    ; Revision digit 0
+        RELVER0          = 4    ; Revision digit 0
 
         TERM_LINUX       = 1    ; LF terminates line
 
@@ -40,7 +40,9 @@
 
         USE_CALLDOLIT    = 0    ; use CALL DOLIT instead of the DOLIT TRAP handler (deprecated)
         CASEINSENSITIVE  = 0    ; Case insensitive dictionary search
+        EXTNUMPREFIX     = 1    ; Extended number prefix: %: binary, &: decimal
         SPEEDOVERSIZE    = 0    ; Speed-over-size in core words ROT - = < -1 0 1
+        MINIDICT         = 0    ; Dictionary in Flash and EEPROM, marks words for unlinking
         BAREBONES        = 0    ; Removes words: '?KEY 'EMIT EXIT EXG @EXECUTE ERASE
                                 ;   Drops headers: ?RX TX! ?RXP ?RX TXP! TX! LAST DEPTH COUNT
                                 ;     SPACES .R NAME> ABORT" AHEAD
@@ -66,13 +68,12 @@
         WORDS_EXTRADEBUG = 0    ; Extra debug words: >NAME
         WORDS_EXTRACORE  = 0    ; Extra core words: 0= I
         WORDS_EXTRAMEM   = 0    ; Extra memory words: B! 2C@ 2C!
-        WORDS_EXTRAEEPR  = 0    ; Extra EEPROM lock/unlock words: LOCK ULOCK ULOCKF LOCKF
-        WORDS_HWREG      = 0    ; Peripheral Register words
+        WORDS_EXTRAEEPR  = 0    ; Extra EEPROM lock/unlock words: LOCK ULOCK
 
 
         UNLINK_COLD      = 0    ; "COLD"
-        UNLINK_TBOOT     = 1    ; "'BOOT"
-        UNLINK_HI        = 1    ; "hi"
+        UNLINK_TBOOT     = 2    ; "'BOOT"
+        UNLINK_HI        = 2    ; "hi"
         UNLINK_QRX       = 0    ; "?RX"
         UNLINK_TXSTOR    = 0    ; "TX!"
         UNLINK_QRXP      = 0    ; "?RXP"
@@ -118,7 +119,7 @@
         UNLINK_ZLESS     = 0    ; "0<"
         UNLINK_SUBB      = 0    ; "-"
         UNLINK_CNTXT     = 1    ; "CONTEXT"
-        UNLINK_CPP       = 0    ; "cp"
+        UNLINK_CPP       = 1    ; "cp"
         UNLINK_BASE      = 0    ; "BASE"
         UNLINK_INN       = 1    ; ">IN"
         UNLINK_NTIB      = 1    ; "#TIB"
@@ -141,7 +142,7 @@
         UNLINK_QDUP      = 0    ; "?DUP"
         UNLINK_ROT       = 0    ; "ROT"
         UNLINK_DDUP      = 0    ; "2DUP"
-        UNLINK_DNEGA     = 1    ; "DNEGATE"
+        UNLINK_DNEGA     = 2    ; "DNEGATE"
         UNLINK_EQUAL     = 0    ; "="
         UNLINK_ULESS     = 0    ; "U<"
         UNLINK_LESS      = 0    ; "<"
@@ -168,9 +169,9 @@
         UNLINK_INVER     = 0    ; "NOT"
         UNLINK_NEGAT     = 0    ; "NEGATE"
         UNLINK_ABSS      = 0    ; "ABS"
-        UNLINK_ZEQUAL    = 0    ; "0="
+        UNLINK_ZEQUAL    = 2    ; "0="
         UNLINK_PICK      = 0    ; "PICK"
-        UNLINK_TCHAR     = 0    ; ">CHAR"
+        UNLINK_TCHAR     = 1    ; ">CHAR"
         UNLINK_DEPTH     = 0    ; "DEPTH"
         UNLINK_PSTOR     = 0    ; "+!"
         UNLINK_COUNT     = 0    ; "COUNT"
@@ -183,19 +184,19 @@
         UNLINK_PACKS     = 1    ; "PACK$"
         UNLINK_DIGIT     = 1    ; "DIGIT"
         UNLINK_EXTRC     = 1    ; "EXTRACT"
-        UNLINK_BDIGS     = 0    ; "<#"
-        UNLINK_HOLD      = 0    ; "HOLD"
-        UNLINK_DIG       = 0    ; "#"
-        UNLINK_DIGS      = 0    ; "#S"
-        UNLINK_SIGN      = 0    ; "SIGN"
-        UNLINK_EDIGS     = 0    ; "#>"
+        UNLINK_BDIGS     = 2    ; "<#"
+        UNLINK_HOLD      = 2    ; "HOLD"
+        UNLINK_DIG       = 2    ; "#"
+        UNLINK_DIGS      = 2    ; "#S"
+        UNLINK_SIGN      = 2    ; "SIGN"
+        UNLINK_EDIGS     = 2    ; "#>"
         UNLINK_STR       = 1    ; "str"
         UNLINK_HEX       = 0    ; "HEX"
         UNLINK_DECIM     = 0    ; "DECIMAL"
         UNLINK_NUMBQ     = 1    ; "NUMBER?"
         UNLINK_DIGTQ     = 1    ; "DIGIT?"
         UNLINK_KEY       = 0    ; "KEY"
-        UNLINK_NUFQ      = 0    ; "NUF?"
+        UNLINK_NUFQ      = 1    ; "NUF?"
         REMOVE_NUFQ      = 1    ; remove "NUF?"
         UNLINK_SPACE     = 0    ; "SPACE"
         UNLINK_SPACS     = 1    ; "SPACES"
@@ -226,7 +227,7 @@
         UNLINK_KTAP      = 1    ; "kTAP"
         UNLINK_ACCEP     = 1    ; "ACCEPT"
         UNLINK_QUERY     = 1    ; "QUERY"
-        UNLINK_ABORT     = 1    ; "ABORT"
+        UNLINK_ABORT     = 2    ; "ABORT"
         UNLINK_ABORQ     = 1    ; "aborq"
         UNLINK_PRESE     = 1    ; "PRESET"
         UNLINK_INTER     = 1    ; "$INTERPRET"
@@ -236,6 +237,8 @@
         UNLINK_EVAL      = 1    ; "EVAL"
         UNLINK_QUIT      = 1    ; "QUIT"
         UNLINK_TICK      = 0    ; "'"
+        UNLINK_COMMA     = 0    ; ","
+        UNLINK_CCOMMA    = 0    ; "C,"
         UNLINK_JSRC      = 0    ; "CALL,"
         UNLINK_LITER     = 0    ; "LITERAL"
         UNLINK_BCOMP     = 0    ; "[COMPILE]"
@@ -259,10 +262,11 @@
         UNLINK_ABRTQ     = 0    ; 'ABORT"'
         UNLINK_STRQ      = 0    ; '$"'
         UNLINK_DOTQ      = 0    ; '."'
-        UNLINK_UNIQU     = 0    ; "?UNIQUE"
+        UNLINK_UNIQU     = 1    ; "?UNIQUE"
         UNLINK_SNAME     = 1    ; "$,n"
         UNLINK_SCOMP     = 1    ; "$COMPILE"
         UNLINK_OVERT     = 0    ; "OVERT"
+        UNLINK_SEMIS     = 0    ; ";"
         UNLINK_COLON     = 0    ; ":"
         UNLINK_RBRAC     = 0    ; "]"
         UNLINK_DOESS     = 0    ; "DOES>"
@@ -279,7 +283,7 @@
         REMOVE_DUMP      = 0    ; remove "DUMP"
         UNLINK_DOTS      = 0    ; ".S"
         REMOVE_DOTS      = 0    ; remove ".S"
-        UNLINK_DOTID     = 0    ; ".ID"
+        UNLINK_DOTID     = 1    ; ".ID"
         UNLINK_TNAME     = 1    ; ">NAME"
         REMOVE_TNAME     = 1    ; remove ">TNAME"
         UNLINK_WORDS     = 0    ; "WORDS"
